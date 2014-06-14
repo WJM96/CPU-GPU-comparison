@@ -33,16 +33,23 @@ clock_t timedGPURoots(dataType squares[], unsigned size)
 	concurrency::array_view<float, 1> av(size, squares);
 
 	clock_t start = clock();
-
-	concurrency::parallel_for_each(
-		av.extent,
-		[=](concurrency::index<1> idx) restrict(amp)
+	try
 	{
-		
-		concurrency::fast_math::sqrt(av[idx]);
-	}
-	);
+		concurrency::parallel_for_each(
+			av.extent,
+			[=](concurrency::index<1> idx) restrict(amp)
+		{
 
+			concurrency::fast_math::sqrt(av[idx]);
+		}
+		);
+	}
+	catch (concurrency::accelerator_view_removed avr)
+	{
+		std::cout << "TDR exception recieved!\n" << avr.what() << std::endl;
+		system("pause");
+		exit(1);
+	}
 	return clock() - start;
 }
 
@@ -87,7 +94,7 @@ int main(int argc, char* argv[])
 
 	for (int i = 0; i < sizeOfArray; i++)
 	{
-		cpuTimes[i] = 0;//timedCPURoots(squares, i + 1);
+		cpuTimes[i] = timedCPURoots(squares, i + 1);
 		gpuTimes[i] = timedGPURoots(squares, i + 1);
 		if (i % 1000 == 0)
 		{
