@@ -9,20 +9,22 @@
 #include <time.h>
 #include <math.h>
 
-clock_t timedCPURoots(float squares[], unsigned size)
+typedef float dataType;
+
+clock_t timedCPURoots(dataType squares[], unsigned size)
 {
 	clock_t start;
 	start = clock();
 
 	for (int i = 0; i < size; i++)
 	{
-		std::sqrtf(squares[i]);
+		std::sqrt(squares[i]);
 	}
 
 	return  clock() - start;
 }
 
-clock_t timedGPURoots(float squares[], unsigned size)
+clock_t timedGPURoots(dataType squares[], unsigned size)
 {
 	concurrency::array_view<float, 1> av(size, squares);
 
@@ -56,30 +58,49 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
+	clock_t *gpuTimes;
+	clock_t *cpuTimes;
+	dataType *squares;
 
-	float *squares;
+	std::cout << "allocating memory..." << std::endl;
 	try
 	{
-		squares = new float[sizeOfArray];
+		squares = new dataType[sizeOfArray];
+		gpuTimes = new clock_t[sizeOfArray];
+		cpuTimes = new clock_t[sizeOfArray];
 	}
 	catch (std::bad_alloc)
 	{
 		std::cout << "Could not allocate the memory (you may want to restart)" << std::endl;
 		return 0;
 	}
+	std::cout << "success!" << std::endl;
 
 	for (int i = 0; i < sizeOfArray; i++)
 	{
 		squares[i] = i + 1;
 	}
-	
-	std::cout << "CPU took: " << timedCPURoots(squares, sizeOfArray) 
-		<< "ms to calculate the root of " << sizeOfArray << " numbers" << std::endl;
-	std::cout << "GPU took: " << timedGPURoots(squares, sizeOfArray)
-		<< "ms to calculate the root of " << sizeOfArray << " numbers" << std::endl;
+
+	for (int i = 0; i < sizeOfArray; i++)
+	{
+		cpuTimes[i] = timedCPURoots(squares, i + 1);
+		gpuTimes[i] = timedGPURoots(squares, i + 1);
+	}
+
+	for (int i = 0; i < sizeOfArray; i++)
+	{
+		if (gpuTimes[i] > cpuTimes[i])
+		{
+			std::cout << "The gpu overtook the cpu at: " << i << std::endl;
+			break;
+		}
+	}
+
 
 	//delete, delete, delete!
 	delete[] squares;
+	delete[] cpuTimes;
+	delete[] gpuTimes;
 
 	std::system("pause");
 	return 0;
