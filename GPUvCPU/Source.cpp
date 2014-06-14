@@ -2,12 +2,16 @@
 	Wesley McClintock
 	6/14/2014
 	This is just a redo of a little demo I made to show the differences between the CPU and GPU
+
+	NOTE: C++ amp does not like release mode, it is (probably) a TDR.
+	see: http://blogs.msdn.com/b/nativeconcurrency/archive/2012/03/07/handling-tdrs-in-c-amp.aspx
 */
 #include <iostream>
 #include <amp.h>
 #include <amp_math.h>
 #include <time.h>
 #include <math.h>
+#include <fstream>
 
 typedef float dataType;
 
@@ -18,7 +22,7 @@ clock_t timedCPURoots(dataType squares[], unsigned size)
 
 	for (int i = 0; i < size; i++)
 	{
-		std::sqrt(squares[i]);
+		std::sqrt(i);
 	}
 
 	return  clock() - start;
@@ -83,20 +87,18 @@ int main(int argc, char* argv[])
 
 	for (int i = 0; i < sizeOfArray; i++)
 	{
-		cpuTimes[i] = timedCPURoots(squares, i + 1);
+		cpuTimes[i] = 0;//timedCPURoots(squares, i + 1);
 		gpuTimes[i] = timedGPURoots(squares, i + 1);
-	}
-
-	for (int i = 0; i < sizeOfArray; i++)
-	{
-		if (gpuTimes[i] > cpuTimes[i])
+		if (i % 1000 == 0)
 		{
-			std::cout << "The gpu overtook the cpu at: " << i << std::endl;
-			break;
+			std::cout << i << std::endl;
 		}
 	}
 
-
+	std::ofstream ofs("gpuvcpu.bin");
+	ofs.write((char*)gpuTimes, sizeof(gpuTimes[0]) * sizeOfArray);
+	ofs.write((char*)cpuTimes, sizeof(cpuTimes[0]) * sizeOfArray);
+	ofs.close();
 	//delete, delete, delete!
 	delete[] squares;
 	delete[] cpuTimes;
